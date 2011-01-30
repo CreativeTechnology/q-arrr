@@ -1,0 +1,9 @@
+exports.Config = {
+    httpPort : 5000,
+    
+    mysqlHost : "localhost",
+    mysqlPort : 3306,
+    mysqlUser : "user",
+    mysqlPass : "pass",
+    mysqlDB   : "db"
+};

@@ -1,0 +1,6 @@
+.settings.xml
+desktop.ini
+*~
+*.swp
+
+nodejs/config.js
