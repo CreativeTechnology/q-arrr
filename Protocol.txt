@@ -1,0 +1,59 @@
+PROTOCOL FOR WEBSOCKET COMMUNICATION
+
+CONTROLLER -> APP
+
+{ /* Button event. */
+  'msgtype': 'buttonevent',
+  'clientid':  '$appid',
+  => 'clientid':  '$userid'.
+  'buttonevent':   '$event'
+}
+
+{ /* Join App. */
+  'msgtype':   'connection',
+  'clientid': '$clientid',
+  'clientid': '$clientid'
+
+}
+
+
+
+
+APP -> CONTROLLER
+
+{ /* Controller Layout */
+  'msgtype': 'controller',
+  'clientid':  '$clientid',
+  'buttons': {
+    {'label':'$label1', 'buttonevent':'$event1', 'color':'$color1'},
+    {'label':'$label2', 'buttonevent':'$event2', 'color':'$color2'},
+     ...
+  }
+}
+
+
+
+
+APP -> SERVER
+
+{ /* Register App */
+  'msgtype': 'registerapp',
+  'appname':  '$name',
+}
+
+
+
+
+SERVER -> APP
+
+{ /* Send appid */
+  'msgtype': 'identifier',
+  'clientid':  '$id',
+}
+
+SERVER -> CLIENT
+
+{ /* Client timed out/disconnected */
+  'msgtype': 'connectionlost',
+  'clientid':  '$clientid',
+}
