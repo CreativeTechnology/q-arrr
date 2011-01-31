@@ -1,14 +1,15 @@
-var socket = new io.Socket('ewi1544.ewi.utwente.nl', {
+// replace window.location.hostname with hostname if running on different host
+var socket = new io.Socket(window.location.hostname, {
     transports:['websocket', 'htmlfile', 'xhr-multipart',
                             'xhr-polling', 'jsonp-polling']});
 
 socket.on('connect', function(){
-    var msg = { "msgtype":"connection", "clientid":appid, "userid":userid };
+    var msg = { "msgtype":"connection", "appid":appid, "userid":userid };
     var msgEncoded = $.toJSON(msg);
     socket.send(msgEncoded);
     var timer = setInterval(function() {
         socket.send($.toJSON({ "msgtype":"heartbeat" }));
-    }, 1000);
+    }, 2000);
 });
 
 function buttonEvent(msg) {
