@@ -1,8 +1,12 @@
-Q-Arrr
-==============================
+Q-Arrr - Control 3D Applications [on public screens] with smartphones
+=====================================================================
 
-Note: Currently not in a plug & play-ish state!
+This is a node.js application that lets users control Unity3D (and other) applications
+via their smartphones by redirecting them from a QR-Code to a websocket-enabled
+controller website. The application itself is also connected to the websocket
+server and can modify the controllers layout remotely.
 
-/nodejs dir contains a node application acting as a socket server managing connection for multiple applications.
+This is a partitial result of a larger effort to make a gamelayer for reality,
+using qr-codes to like between real objects and digital feedback.
 
-/unity dir will contain code/.unitypackages to hook up 3d applications to the infrastructure.
+Check out the README in the unity folder for setup instructions.
