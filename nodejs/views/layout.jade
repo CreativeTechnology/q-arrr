@@ -7,8 +7,8 @@ html(lang="en")
     - if (page=="controller")
       script(src="http://code.jquery.com/jquery-1.5.min.js", type="application/javascript")
       script(src="http://jquery-json.googlecode.com/files/jquery.json-2.2.min.js", type="application/javascript")
-      script(src="/controller.js", type="application/javascript")
       script(src="/socket.io/socket.io.js", type="application/javascript")
+      script(src="/controller.js", type="application/javascript")
       :javascript
         | appid = "${appid}";
         | authkey = "${authkey}";
