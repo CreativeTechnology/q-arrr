@@ -1,0 +1,3 @@
+[submodule "unity/socketio"]
+	path = unity/socketio
+	url = git://github.com/CreativeTechnology/socket.io-unity-client.git
