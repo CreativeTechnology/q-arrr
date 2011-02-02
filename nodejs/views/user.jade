@@ -1,0 +1,10 @@
+form(method:"post", action=action)
+  input(type:"text", name="user[name]")
+  input(type:"password", name="user[pass]")
+  input(type:"submit")
+br
+- if (page=="login")
+  a(href="/register") Create account
+- else
+  a(href="/login") Log into existing account
+
