@@ -4,3 +4,4 @@ desktop.ini
 *.swp
 
 nodejs/config.js
+nodejs/*.db
