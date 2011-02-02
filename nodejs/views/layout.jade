@@ -4,12 +4,13 @@ html(lang="en")
     title= title
     meta(name:"viewport", content:"width=device-width; initial-scale=1; user-scalable=no")
     link(href="/style.css", media="screen", rel="stylesheet", type="text/css")
-    script(src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js", type="application/javascript")
-    script(src="/socket.io/socket.io.js", type="application/javascript")
-    script(src="http://jquery-json.googlecode.com/files/jquery.json-2.2.min.js")
     - if (page=="controller")
+      script(src="http://code.jquery.com/jquery-1.5.min.js", type="application/javascript")
+      script(src="http://jquery-json.googlecode.com/files/jquery.json-2.2.min.js", type="application/javascript")
       script(src="/controller.js", type="application/javascript")
+      script(src="/socket.io/socket.io.js", type="application/javascript")
       :javascript
         | appid = "${appid}";
-        | userid = "${userid}";
+        | authkey = "${authkey}";
+        | username = "${username}";
   body!= body
