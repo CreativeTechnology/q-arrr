@@ -39,10 +39,10 @@ this.removeClient = function(client) {
 
 // Add a client to the system. Generates an id.
 this.addClient = function(client) {
-	var id = this.randomString(4);
-	clients[client.sessionId] = {client:client, id:id, connected:[]};
-	clientIds[id] = client.sessionId;
-	return id;
+    var id = this.randomString(4);
+    clients[client.sessionId] = {client:client, id:id, connected:[]};
+    clientIds[id] = client.sessionId;
+    return id;
 }
 
 // Registers a connection between two clients.
@@ -54,8 +54,7 @@ this.joinApp = function(client, app) {
 // Sends the connectionlost message on removal.
 // Also keeps the connected array clean
 this.connectionLost = function(client, other) {
-	var msg = {msgtype:"connectionlost", clientid:other.id};
-	client.connected.splice(
-	    client.connected.indexOf(other.client.sessionId), 1);
+	var msg = {msgtype:"_disconnect", src:other.id, dest:client.id};
+	client.connected.splice(client.connected.indexOf(other.client.sessionId), 1);
 	client.client.send(JSON.stringify(msg));
 }

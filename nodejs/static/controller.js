@@ -4,12 +4,18 @@ var socket = new io.Socket(window.location.hostname, {
                             'xhr-polling', 'jsonp-polling']});
 
 socket.on('connect', function(){
-    var msg = { "msgtype":"connection", "appid":appid, "userid":userid };
+    var msg = {
+        "msgtype":"_register",
+        "content": {
+            "username":username,
+            "authkey":authkey
+        }
+    };
     var msgEncoded = $.toJSON(msg);
     socket.send(msgEncoded);
-    var timer = setInterval(function() {
-        socket.send($.toJSON({ "msgtype":"heartbeat" }));
-    }, 2000);
+//    var timer = setInterval(function() {
+//        socket.send($.toJSON({ "msgtype":"heartbeat" }));
+//    }, 2000);
 });
 
 function buttonEvent(msg) {
@@ -22,12 +28,13 @@ socket.on('message', function(msg){
     var msg = $.parseJSON(msg);
     if(msg.msgtype=="controller") {
     	$('#box').html("");
-        for(var k=0; k< msg.buttons.length; k++) {
-            var button = msg.buttons[k];
+        for(var k=0; k< msg.content.length; k++) {
+            var button = msg.content[k];
             var res = $.toJSON({
                 "msgtype":"buttonevent",
-                "buttonevent":button.buttonevent,
-                "clientid":appid });
+                "content":button.buttonevent,
+                "src":userid,
+                "dest":appid });
     		$("<button />")
     			.html( button.label)
     			.attr( 'id', 'button'+k)
@@ -36,14 +43,20 @@ socket.on('message', function(msg){
         		.click(buttonEvent(res))
     			.appendTo( $('#box') );
     	}
-    } else if (msg.msgtype=="connectionlost" && msg.clientid == appid) {
-        $('#box').html("<b>Connection lost</b>");
+    } else if (msg.msgtype=="_disconnect" && msg.src == appid) {
+        $('#box').html("<b>Connection lost (Remote)</b>");
+    } else if (msg.msgtype=="_identifier") {
+        userid = msg.content;
+        var msg = { "msgtype":"_connect", "dest":appid, "src":userid };
+        var msgEncoded = $.toJSON(msg);
+        socket.send(msgEncoded);
     }
 });
+
 socket.on('disconnect', function(){
-    $('#box').html("<b>Connection lost</b>");    
+    $('#box').html("<b>Connection lost (Closed)</b>");    
 });
 
 $(document).ready(function() {
-  socket.connect();
+    socket.connect();
 });
