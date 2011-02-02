@@ -1,4 +1,20 @@
-PROTOCOL FOR WEBSOCKET COMMUNICATION
+NEW PROTOCOL:
+
+{ 
+  'msgtype': '$msgtype', // what
+  'dest':    '$destid', // to
+  'src':     '$srcid', // from
+  'content':  $content // optional
+}
+
+Reserved $msgtypes
+'_connect'
+'_disconnect'
+'_register'
+'_identifier'
+
+
+OLD PROTOCOL
 
 CONTROLLER -> APP
 
