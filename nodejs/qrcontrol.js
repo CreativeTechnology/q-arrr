@@ -1,7 +1,7 @@
 var express = require('express');
 var http =    require('http');
 var Store =   require('supermarket');
-var config =  require('./config.js').Config;
+var config =  require('./config.js.default').Config;
 var ch =      require('./modules/clienthelper');
 
 require('joose');
