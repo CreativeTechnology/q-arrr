@@ -3,10 +3,16 @@ body {
     color:white;
 }
 
-#box {
+#box, #message {
     width:100%;
     margin:20px 0;
     text-align:center;
+}
+
+#message {
+    background:yellow;
+    color:black;
+    font-style:italic;
 }
 
 #box button {
@@ -17,4 +23,12 @@ body {
     border:1px solid white;
     margin:3px 0;
     color:black;
+}
+
+a {
+    color:red;
+}
+
+a:visited {
+    color:red;
 }
