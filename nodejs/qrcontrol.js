@@ -1,33 +1,45 @@
-var express = require('express');
-var http =    require('http');
-var Store =   require('supermarket');
-var config =  require('./config.js.default').Config;
-var ch =      require('./modules/clienthelper');
+var express = require('express'),
+    http    = require('http'),
+    nStore  = require('nstore').extend(require('/usr/local/lib/node/.npm/nstore/active/package/lib/nstore/query')()),
+    Memory  = require('connect/middleware/session/memory'),
+    config  = require('./config.js.default').Config,
+    ch      = require('./modules/clienthelper');
 
 require('joose');
 require('joosex-namespace-depended');
 require('hash');
 
-var webserver = express.createServer();
+var webserver = express.createServer(
+    express.staticProvider(__dirname + '/static'),
+    express.bodyDecoder(),
+    express.cookieDecoder(),
+    express.session({
+        store: new MemoryStore({ reapInterval: 60000 * 30 }), 
+        key: 'qarrr_session',
+        secret: 'bYba6jHVat73HR0HsslU5XVALXjWIsJE'
+    })
+);
 
-var clientAuth = {};
+var users = nStore.new(__dirname+'/users.db');
+var sessions = nStore.new(__dirname+'/sessions.db');
 
-var users = new Store({
-    filename : __dirname + '/users.db',
-    json : true
-});
+var setAuthkey = function(user, cb) {
+    users.get(user, function (err, doc, key) {
+        if(!err) {
+            doc._authkey = ch.randomString(7);
+            users.save(key, doc, function(errr) {
+                if (!errr) {
+                    cb(doc._authkey);
+                } else console.log(errr);
+            });
+        } else console.log(err);
+    });
+}
 
-var sessions = new Store({
-    filename : __dirname + '/sessions.db',
-    json : true
-});
 
 webserver.set('view engine', 'jade');
 webserver.set('views', __dirname + '/views');
-
-webserver.use(express.staticProvider(__dirname + '/static'));
-webserver.use(express.bodyDecoder());
-webserver.use(require('sesame')({ store : sessions }));
+webserver.set('security', 'secret');
 
 webserver.get('/', function(req, res) {
     res.render('default', { locals: {
@@ -65,9 +77,10 @@ webserver.post('/login', function(req, res) {
             } else {
                 res.redirect('/');
             }
+        } else {
+            res.redirect('/login');
         }
     });
-    res.redirect('/login');
 });
 
 webserver.get('/register', function(req, res) {
@@ -80,11 +93,12 @@ webserver.get('/register', function(req, res) {
 });
 
 webserver.post('/register', function(req, res) {
-    users.set(req.body.user.name, {
+    users.save(req.body.user.name, {
         "name":req.body.user.name,
         "items":[
             //{"id":1,"name":"Wrench","assetname":"wrench","slot":"rh"}
         ],
+        _authkey: ch.randomString(7),
         _pass: Hash.md5(req.body.user.pass)
     }, function(error) {
         if (!error) {
@@ -103,18 +117,19 @@ webserver.post('/register', function(req, res) {
 
 webserver.get('/join/:appid', function(req, res) {
     if (!req.session.authed) {
-        req.session.redirect = "/join/"+req.params.appid;
+        req.session.redirect = req.url;
         res.redirect('/login');
     } else if (ch.findClient(req.params.appid)) {
-        req.session._authkey = ch.randomString(7);
-        res.render('controller', {
-            locals: {
-                title: "App Controller",
-                page:  "controller",
-                appid: req.params.appid,
-                authkey: req.session._authkey,
-                username: req.session.username
-            }
+        setAuthkey(req.session.username, function(key) {
+            res.render('controller', {
+                locals: {
+                    title: "App Controller",
+                    page:  "controller",
+                    appid: req.params.appid,
+                    authkey: key,
+                    username: req.session.username
+                }
+            });
         });
     } else {
         res.render('message', { locals: {
@@ -150,20 +165,16 @@ socket.on('connection', function(client){
             var identifier = ch.addClient(client);
             var res = { "msgtype": '_identifier', "content": identifier };
             if (msgd.content) {
-                sessions.filter(function(meta){
-                    return meta.value.username==msgd.content.username &&
-                        meta.value.authed &&
-                        meta.value._authkey == msgd.content.authkey;
-                })
-                .join(function(results) {
-                    if (results.length == 1) {
-                        results = results[0];
-                        results.value._authkey = ch.randomString(7);
-                        sessions.set(results.key, results.value);
-                        ch.getClient(client.sessionId).user =
-                        msgd.content.username;
-                        client.send(JSON.stringify(res));
-                    }
+                users.find({
+                    name:msgd.content.username,
+                    _authkey:msgd.content.authkey
+                }, function(err, results) {
+                    if (!err) {
+                        if (results[msgd.content.username]) setAuthkey(msgd.content.username, function(key) {
+                            ch.getClient(client.sessionId).user = msgd.content.username;
+                            client.send(JSON.stringify(res));
+                        });
+                    } else console.log(err);
                 });
             } else {
                 client.send(JSON.stringify(res));
@@ -180,11 +191,14 @@ socket.on('connection', function(client){
                     }
                 });
             }
-        } else if (msgd.dest) {
+        } else if (msgd.dest && ch.findClient(msgd.dest)) {
             var dest = ch.findClient(msgd.dest).client;
             if (msgd.src == ch.getClient(client.sessionId).id) {
                 dest.send(JSON.stringify(msgd));
             }
+        } else {
+            console.log("Don't know what to do with this:");
+            console.log(msgd);
         }
     });
     
