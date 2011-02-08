@@ -14,7 +14,7 @@ var webserver = express.createServer(
     express.bodyDecoder(),
     express.cookieDecoder(),
     express.session({
-        store: new MemoryStore({ reapInterval: 60000 * 30 }), 
+        store: new Memory({ reapInterval: 60000 * 30 }), 
         key: 'qarrr_session',
         secret: 'bYba6jHVat73HR0HsslU5XVALXjWIsJE'
     })
