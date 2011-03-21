@@ -1,9 +1,16 @@
 var express = require('express'),
     http    = require('http'),
-    nStore  = require('nstore').extend(require('/usr/local/lib/node/.npm/nstore/active/package/lib/nstore/query')()),
-    Memory  = require('connect/middleware/session/memory'),
-    config  = require('./config.js.default').Config,
+    Mysql   = require('mysql').Client,
+    config  = require('./config.js').Config,
     ch      = require('./modules/clienthelper');
+
+mysql = new Mysql();
+
+mysql.user = config.mysqlUser;
+mysql.password = config.mysqlPass;
+mysql.database = config.mysqlDB;
+mysql.host = config.mysqlHost;
+mysql.connect();
 
 require('joose');
 require('joosex-namespace-depended');
@@ -11,134 +18,69 @@ require('hash');
 
 var webserver = express.createServer(
     express.staticProvider(__dirname + '/static'),
-    express.bodyDecoder(),
-    express.cookieDecoder(),
-    express.session({
-        store: new Memory({ reapInterval: 60000 * 30 }), 
-        key: 'qarrr_session',
-        secret: 'bYba6jHVat73HR0HsslU5XVALXjWIsJE'
-    })
+    express.bodyDecoder()
 );
 
-var users = nStore.new(__dirname+'/users.db');
-var sessions = nStore.new(__dirname+'/sessions.db');
-
 var setAuthkey = function(user, cb) {
-    users.get(user, function (err, doc, key) {
-        if(!err) {
-            doc._authkey = ch.randomString(7);
-            users.save(key, doc, function(errr) {
-                if (!errr) {
-                    cb(doc._authkey);
-                } else console.log(errr);
-            });
-        } else console.log(err);
-    });
-}
+    mysql.query('UPDATE users SET authkey = ? WHERE id = ?',
+        [ch.randomString(7), user], cb
+    );
+};
 
+var verifyAuthkey = function(user, authkey, cb) {
+    mysql.query('SELECT id FROM users WHERE authkey = ? AND id = ? LIMIT 1',
+       [authkey, user], function(err, results, fields) {
+       if (err) throw err;
+       cb(results.length==1);
+    });
+};
+
+var getUser = function(user, cb) {
+    var ewi = http.createClient(80, 'ewi1544.ewi.utwente.nl');
+    var request = ewi.request('GET',
+        '/q-arrr/php/index.php/data/user/'+user,
+        {'host': 'ewi1544.ewi.utwente.nl'}
+    );
+    request.end();
+    request.on('response', function (response) {
+        response.on('data', function (chunk) {
+            cb(chunk+'');
+        });
+    });
+};
 
 webserver.set('view engine', 'jade');
 webserver.set('views', __dirname + '/views');
 webserver.set('security', 'secret');
 
-webserver.get('/', function(req, res) {
-    res.render('default', { locals: {
-            title: "Welcome",
-            page: "root",
-            authed: req.session.authed,
-            user: req.session.username
-        }
-    });
-});
-
-webserver.get('/logout', function(req, res) {
-    req.session.authed = false;
-    delete req.session.redirect;
-    res.redirect('/');
-});
-
-webserver.get('/login', function(req, res) {
-    res.render('user', { locals: {
-            title: "Login",
-            page: "login",
-            action: "/login"
-        }
-    });
-});
-
-webserver.post('/login', function(req, res) {
-    users.get(req.body.user.name, function(error, value, key) {
-        if (!error && value._pass == Hash.md5(req.body.user.pass)) {
-            req.session.authed = true;
-            req.session.username = req.body.user.name;
-            if (req.session.redirect) {
-                res.redirect(req.session.redirect);
-                delete req.session.redirect;
-            } else {
-                res.redirect('/');
-            }
-        } else {
-            res.redirect('/login');
-        }
-    });
-});
-
-webserver.get('/register', function(req, res) {
-    res.render('user', { locals: {
-            title: "Register",
-            page: "register",
-            action: "/register"
-        }
-    });
-});
-
-webserver.post('/register', function(req, res) {
-    users.save(req.body.user.name, {
-        "name":req.body.user.name,
-        "items":[
-            //{"id":1,"name":"Wrench","assetname":"wrench","slot":"rh"}
-        ],
-        _authkey: ch.randomString(7),
-        _pass: Hash.md5(req.body.user.pass)
-    }, function(error) {
-        if (!error) {
-            req.session.authed = true;
-            req.session.username = req.body.user.name;
-            if (req.session.redirect) {
-                res.redirect(req.session.redirect);
-                delete req.session.redirect;
-            } 
-            res.redirect('/');
-        } else {
-            res.redirect('/register');
-        }
-    });  
-});
-
-webserver.get('/join/:appid', function(req, res) {
-    if (!req.session.authed) {
-        req.session.redirect = req.url;
-        res.redirect('/login');
-    } else if (ch.findClient(req.params.appid)) {
-        setAuthkey(req.session.username, function(key) {
-            res.render('controller', {
-                locals: {
-                    title: "App Controller",
-                    page:  "controller",
-                    appid: req.params.appid,
-                    authkey: key,
-                    username: req.session.username
+webserver.get('/a/:appid/:userid/:authkey', function(req, res) {
+    verifyAuthkey(req.params.userid, req.params.authkey, function(verified) {
+        if (verified) {
+            setAuthkey(req.params.userid, function(err) {
+                if (!err && ch.findClient(req.params.appid)) {
+                    res.render('controller', {
+                        locals: {
+                            title: "App Controller",
+                            page:  "controller",
+                            appid: req.params.appid,
+                            authkey: "",
+                            username: req.params.userid
+                        }
+                    });
+                } else {
+                    res.render('message', {
+                        locals: {
+                            title: "Error",
+                            page:  "message",
+                            message: "App not Found"
+                        }
+                    });
                 }
-            });
-        });
-    } else {
-        res.render('message', { locals: {
-                title: "Error",
-                page:  "message",
-                message: "App not Found"
-            }
-        });
-    }
+            }); 
+        } else {
+            res.redirect('http://ewi1544.ewi.utwente.nl/q-arrr/php/index.php/j/'+req.params.appid);
+        }
+    });
 });
 
 webserver.get(/^\/qr\/(.+)?/, function(req, res) {
@@ -160,34 +102,24 @@ var socket = io.listen(webserver);
 socket.on('connection', function(client){
     client.on('message', function(msg){
         var msgd = JSON.parse(msg);
-        if (false && msgd.msgtype!='_heartbeat') console.log(msg);
+        if (false && msgd.msgtype !='_heartbeat') console.log(msg);
         if (msgd.msgtype == '_register') {
             var identifier = ch.addClient(client);
             var res = { "msgtype": '_identifier', "content": identifier };
-            if (msgd.content) {
-                users.find({
-                    name:msgd.content.username,
-                    _authkey:msgd.content.authkey
-                }, function(err, results) {
-                    if (!err) {
-                        if (results[msgd.content.username]) setAuthkey(msgd.content.username, function(key) {
-                            ch.getClient(client.sessionId).user = msgd.content.username;
-                            client.send(JSON.stringify(res));
-                        });
-                    } else console.log(err);
-                });
-            } else {
-                client.send(JSON.stringify(res));
+            if (msgd.content) { // Needs verification
+                ch.getClient(client.sessionId).user = msgd.content.username;
             }
+            client.send(JSON.stringify(res));
         } else if (msgd.msgtype == '_connect') {
-            if (ch.getClient(client.sessionId).user) {
-                users.get(ch.getClient(client.sessionId).user, function(error, value, key) {
-                    if (!error && ch.findClient(msgd.dest) && ch.findClient(msgd.src).user==key) {
-                        msgd.content = value;
-                        delete msgd.content._pass;
-                        var app = ch.findClient(msgd.dest).client;
-                        ch.joinApp(client, app);
-                        app.send(JSON.stringify(msgd));
+            var c = ch.getClient(client.sessionId);
+            if (c.user) {
+                getUser(c.user, function(data) {
+                    //console.log(data);
+                    msgd.content = JSON.parse(data);
+                    var app = ch.findClient(msgd.dest);
+                    if (app) { 
+                        ch.joinApp(client, app.client);
+                        app.client.send(JSON.stringify(msgd));
                     }
                 });
             }
@@ -197,8 +129,10 @@ socket.on('connection', function(client){
                 dest.send(JSON.stringify(msgd));
             }
         } else {
-            console.log("Don't know what to do with this:");
-            console.log(msgd);
+            if (msgd.msgtype != '_heartbeat') {
+                console.log("Don't know what to do with this:");
+                console.log(msgd);
+            }
         }
     });
     

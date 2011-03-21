@@ -54,7 +54,9 @@ this.joinApp = function(client, app) {
 // Sends the connectionlost message on removal.
 // Also keeps the connected array clean
 this.connectionLost = function(client, other) {
+    if (other && client) {
 	var msg = {msgtype:"_disconnect", src:other.id, dest:client.id};
 	client.connected.splice(client.connected.indexOf(other.client.sessionId), 1);
 	client.client.send(JSON.stringify(msg));
+    }
 }
