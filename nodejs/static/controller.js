@@ -13,9 +13,9 @@ socket.on('connect', function(){
     };
     var msgEncoded = $.toJSON(msg);
     socket.send(msgEncoded);
-//    var timer = setInterval(function() {
-//        socket.send($.toJSON({ "msgtype":"heartbeat" }));
-//    }, 2000);
+    var timer = setInterval(function() {
+        socket.send($.toJSON({ "msgtype":"_heartbeat" }));
+    },600);
 });
 
 function buttonEvent(msg) {
