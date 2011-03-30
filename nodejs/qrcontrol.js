@@ -8,8 +8,8 @@ require('joosex-namespace-depended');
 require('hash');
 
 var webserver = express.createServer(
-    express.staticProvider(__dirname + '/static'),
-    express.bodyDecoder()
+    express.bodyParser(),
+    express.static(__dirname + '/static')
 );
 
 webserver.set('view engine', 'jade');
