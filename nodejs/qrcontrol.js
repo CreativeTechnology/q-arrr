@@ -75,7 +75,7 @@ socket.on('connection', function(client){
                     app.client.send(JSON.stringify(msgd));
                 }
             }
-        } else if (msgd.dest && ch.findClient(msgd.dest)) {
+        } else if (msgd.dest && ch.findClient(msgd.dest) && ch.findClient(client.sessionId)) {
             var dest = ch.findClient(msgd.dest).client;
             if (msgd.src == ch.getClient(client.sessionId).id) {
                 dest.send(JSON.stringify(msgd));
