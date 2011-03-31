@@ -19,9 +19,11 @@ socket.on('connect', function(){
 });
 
 function buttonEvent(msg) {
-    return function() {
-        socket.send(msg);
-    }    
+    var em = msg;
+    return function( e ) {
+        e.preventDefault();
+        socket.send(em);
+    };
 }
 
 socket.on('message', function(msg){
@@ -40,7 +42,8 @@ socket.on('message', function(msg){
     			.attr( 'id', 'button'+k)
     			.attr( 'value', button.buttonevent )
     			.css('background', button.color)
-        		.click(buttonEvent(res))
+                .bind("touchstart", buttonEvent(res))
+                .bind("mousedown", buttonEvent(res))
     			.appendTo( $('#box') );
     	}
     } else if (msg.msgtype=="_disconnect" && msg.src == appid) {
@@ -56,6 +59,7 @@ socket.on('message', function(msg){
 socket.on('disconnect', function(){
     $('#box').html("<b>Connection lost (Closed)</b>");    
 });
+
 
 $(document).ready(function() {
     socket.connect();
