@@ -56,8 +56,14 @@ var io = require('socket.io');
 var socket = io.listen(webserver); 
 socket.on('connection', function(client){
     client.on('message', function(msg){
-        var msgd = JSON.parse(msg);
-        if (msgd.msgtype !='_heartbeat') console.log(msg);
+        try {
+            var msgd = JSON.parse(msg);
+        } catch (e) {
+            console.log("couldnt parse message: ");
+            console.log(msg);
+            return;
+        }
+        if (config.debug && msgd.msgtype !='_heartbeat') console.log(msg);
         if (msgd.msgtype == '_register') {
             var identifier = ch.addClient(client);
             var res = { "msgtype": '_identifier', "content": identifier };

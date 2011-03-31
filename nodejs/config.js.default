@@ -1,3 +1,4 @@
 exports.Config = {
     httpPort : 5005,
+    debug    : false
 };
