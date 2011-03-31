@@ -57,7 +57,7 @@ var socket = io.listen(webserver);
 socket.on('connection', function(client){
     client.on('message', function(msg){
         var msgd = JSON.parse(msg);
-        if (false && msgd.msgtype !='_heartbeat') console.log(msg);
+        if (msgd.msgtype !='_heartbeat') console.log(msg);
         if (msgd.msgtype == '_register') {
             var identifier = ch.addClient(client);
             var res = { "msgtype": '_identifier', "content": identifier };
@@ -75,7 +75,7 @@ socket.on('connection', function(client){
                     app.client.send(JSON.stringify(msgd));
                 }
             }
-        } else if (msgd.dest && ch.findClient(msgd.dest) && ch.findClient(client.sessionId)) {
+        } else if (msgd.dest && ch.findClient(msgd.dest) && ch.getClient(client.sessionId)) {
             var dest = ch.findClient(msgd.dest).client;
             if (msgd.src == ch.getClient(client.sessionId).id) {
                 dest.send(JSON.stringify(msgd));
