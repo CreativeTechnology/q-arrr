@@ -1,8 +1,5 @@
 exports.Config = {
-<<<<<<< HEAD
-    httpPort : 5005
-=======
     httpPort : 5005,
+    httpHost : '127.0.0.1',
     debug    : false
->>>>>>> 5f0f4b4754d791479ae6393425b276bdeacfe8e6
 };
