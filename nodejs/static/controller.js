@@ -18,7 +18,7 @@ socket.on('connect', function(){
     },600);
 });
 
-function buttonEvent(msg) {
+function buttonEvent(msg, pref) {
     var em = msg;
     return function( e ) {
         e.preventDefault();
@@ -26,28 +26,46 @@ function buttonEvent(msg) {
     };
 }
 
+function responseMsg(evt) {
+    return $.toJSON({
+        "msgtype":"buttonevent",
+        "content": evt,
+        "src":userid,
+        "dest":appid
+    });
+}
+
+function insertElement(element) {
+    var evtDown = responseMsg('+'+element.buttonevent);
+    var evtUp = responseMsg('-'+element.buttonevent);
+    var div = $("<div />")
+        .addClass(element.type)
+    if (element.type==="button") {
+        div.attr("alt", element.label)
+            .bind("touchstart", buttonEvent(evtDown))
+            .bind("touchend", buttonEvent(evtUp))
+            .bind("mousedown", buttonEvent(evtDown))
+            .bind("mouseup", buttonEvent(evtUp));
+    } else if (element.type==="bar") {
+        div.css({ 'width': parseInt(element.label)+"%" });
+        // set color
+    } else if (element.type==="text") {
+        div.html(element.label);
+    }
+    $("#"+element.id).html(div);
+}
+
 socket.on('message', function(msg){
     var msg = $.parseJSON(msg);
     if(msg.msgtype=="controller") {
-    	$('#box').html("");
+        if (!msg.update) {
+            $('.element').html("");
+        }
         for(var k=0; k< msg.content.length; k++) {
-            var button = msg.content[k];
-            var res = $.toJSON({
-                "msgtype":"buttonevent",
-                "content":button.buttonevent,
-                "src":userid,
-                "dest":appid });
-    		$("<button />")
-    			.html( button.label)
-    			.attr( 'id', 'button'+k)
-    			.attr( 'value', button.buttonevent )
-    			.css('background', button.color)
-                .bind("touchstart", buttonEvent(res))
-                .bind("mousedown", buttonEvent(res))
-    			.appendTo( $('#box') );
+            insertElement(msg.content[k]);
     	}
     } else if (msg.msgtype=="_disconnect" && msg.src == appid) {
-        $('#box').html("<b>Connection lost (Remote)</b>");
+        $('body').html("<b>Connection lost (Remote)</b>");
     } else if (msg.msgtype=="_identifier") {
         userid = msg.content;
         var msg = { "msgtype":"_connect", "dest":appid, "src":userid };
