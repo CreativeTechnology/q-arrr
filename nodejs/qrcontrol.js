@@ -8,8 +8,13 @@ require('joosex-namespace-depended');
 require('hash');
 
 var webserver = express.createServer(
+<<<<<<< HEAD
     express.static(__dirname + '/static'),
     express.bodyParser()
+=======
+    express.bodyParser(),
+    express.static(__dirname + '/static')
+>>>>>>> 5f0f4b4754d791479ae6393425b276bdeacfe8e6
 );
 
 webserver.set('view engine', 'jade');
@@ -56,8 +61,14 @@ var io = require('socket.io');
 var socket = io.listen(webserver); 
 socket.on('connection', function(client){
     client.on('message', function(msg){
-        var msgd = JSON.parse(msg);
-        if (false && msgd.msgtype !='_heartbeat') console.log(msg);
+        try {
+            var msgd = JSON.parse(msg);
+        } catch (e) {
+            console.log("couldnt parse message: ");
+            console.log(msg);
+            return;
+        }
+        if (config.debug && msgd.msgtype !='_heartbeat') console.log(msg);
         if (msgd.msgtype == '_register') {
             var identifier = ch.addClient(client);
             var res = { "msgtype": '_identifier', "content": identifier };
@@ -75,7 +86,7 @@ socket.on('connection', function(client){
                     app.client.send(JSON.stringify(msgd));
                 }
             }
-        } else if (msgd.dest && ch.findClient(msgd.dest)) {
+        } else if (msgd.dest && ch.findClient(msgd.dest) && ch.getClient(client.sessionId)) {
             var dest = ch.findClient(msgd.dest).client;
             if (msgd.src == ch.getClient(client.sessionId).id) {
                 dest.send(JSON.stringify(msgd));
