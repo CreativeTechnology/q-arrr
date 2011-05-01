@@ -10,3 +10,6 @@ This is a partitial result of a larger effort to make a gamelayer for reality,
 using qr-codes to like between real objects and digital feedback.
 
 Check out the README in the unity folder for setup instructions.
+
+Install needed node modules:
+$npm install express hash jade joose joosex-namespace-depended socket.io
